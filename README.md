@@ -12,5 +12,11 @@ Here are the steps to rename the branch:
 
 
 # Bash tricks
-- cat \`ls | grep .confusionmatrix`
-
+- Using the output of a command as input to another one
+    ~~~~ 
+    cat `ls | grep .confusionmatrix`
+    ~~~~ 
+- Passing variable arguments to function 
+    ~~~~ 
+    function trash() { mv $@ ~/.Trash; }
+    ~~~~ 
