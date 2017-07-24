@@ -10,6 +10,12 @@ Here are the steps to rename the branch:
 3. git push origin :<old_name>
 4. git push origin <new_name>:refs/heads/<new_name>
 
+#### Deleting a git branch remotely and locally:
+    git push origin --delete <branch_name>
+    git branch -d <branch_name>
+    
+
+
 
 # Bash tricks
 - Using the output of a command as input to another one
