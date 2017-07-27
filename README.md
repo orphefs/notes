@@ -26,3 +26,9 @@ Here are the steps to rename the branch:
     ~~~~ 
     function trash() { mv $@ ~/.Trash; }
     ~~~~ 
+- Watch the contents of a directory change:
+    ~~~~ 
+    watch -d ls -l
+    ~~~~ 
+
+
