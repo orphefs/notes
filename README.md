@@ -30,5 +30,14 @@ Here are the steps to rename the branch:
     ~~~~ 
     watch -d ls -l
     ~~~~ 
-
+- Resume a broken scp transfer:
+    ~~~~
+    rsync --rsh='ssh' -av --progress --partial  user@domain.com:/path/to/data/ .
+    ~~~~
+- Check size of directory:
+    ~~~~
+    du -h <your_directory>
+    ~~~~
+    
+ 
 
