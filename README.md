@@ -38,6 +38,9 @@ Here are the steps to rename the branch:
     ~~~~
     du -h <your_directory>
     ~~~~
-    
+- Use contents of a file as keywords for search to display images:
+    ~~~~
+    cat files.log | xargs -I % find . -name foo*%*.jpg | xargs feh
+    ~~~~
  
 
