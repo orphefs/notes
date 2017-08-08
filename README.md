@@ -42,5 +42,9 @@ Here are the steps to rename the branch:
     ~~~~
     cat files.log | xargs -I % find . -name foo*%*.jpg | xargs feh
     ~~~~
+- Watch memory usage 
+    ~~~~
+    watch free -g
+    ~~~~
  
 
