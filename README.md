@@ -17,6 +17,21 @@ Here are the steps to rename the branch:
 
 
 
+# Python tricks
+- Using memory profiler to profile python code
+    ~~~~ 
+    pip install memory-profiler
+    ~~~~ 
+    Prepend functions to be profiled iwth `@profile`, then run 
+    code using 
+    ~~~~
+    python -m memory_profiler code.py
+    ~~~~
+
+    
+
+
+
 # Bash tricks
 - Using the output of a command as input to another one
     ~~~~ 
