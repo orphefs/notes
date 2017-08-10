@@ -61,5 +61,9 @@ Here are the steps to rename the branch:
     ~~~~
     watch free -g
     ~~~~
+ - Copy public RSA key to remote server
+     ~~~~
+    scp $HOME/.ssh/id_rsa.pub nixcraft@server1.cyberciti.biz:~/.ssh/authorized_keys
+    ~~~~
  
 
