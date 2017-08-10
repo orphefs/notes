@@ -65,5 +65,13 @@ Here are the steps to rename the branch:
      ~~~~
     scp $HOME/.ssh/id_rsa.pub nixcraft@server1.cyberciti.biz:~/.ssh/authorized_keys
     ~~~~
+    
+  - Create alias for remote server
+    ~~~~
+    echo "host_alias IP" > /etc/host.aliases
+    echo "export HOSTALIASES=/etc/host.aliases" >> ~/.bashrc
+    ~~~~
+    
+
  
 
