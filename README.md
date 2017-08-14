@@ -71,7 +71,11 @@ Here are the steps to rename the branch:
     echo "host_alias IP" > /etc/host.aliases
     echo "export HOSTALIASES=/etc/host.aliases" >> ~/.bashrc
     ~~~~
-    
+ 
+   - Undo committed changes
+    ~~~~
+    git reset HEAD~
+    ~~~~
 
  
 
