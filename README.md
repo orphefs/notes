@@ -27,6 +27,12 @@ Here are the steps to rename the branch:
     ~~~~
     python -m memory_profiler code.py
     ~~~~
+    
+- Importing functions from a module into a list:
+    ~~~~
+    check_functions = [func for name, func in inspect.getmembers(checks_module, inspect.isfunction)]
+    ~~~~
+    
 
     
 
@@ -48,7 +54,7 @@ Here are the steps to rename the branch:
 - Resume a broken scp transfer:
     ~~~~
     rsync --rsh='ssh' -av --progress --partial  user@domain.com:/path/to/data/ .
-    ~~~~
+    ~~~~git reset HEAD~
 - Check size of directory:
     ~~~~
     du -h <your_directory>
@@ -73,9 +79,10 @@ Here are the steps to rename the branch:
     ~~~~
  
    - Undo committed changes
-    ~~~~
+   
+    `
     git reset HEAD~
-    ~~~~
+    `
 
  
 
