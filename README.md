@@ -59,6 +59,11 @@ Here are the steps to rename the branch:
     ~~~~
     du -h <your_directory>
     ~~~~
+- Check the size of directories (sorted)
+    ~~~~ 
+    du -sh * | sort -h
+    ~~~~ 
+    
 - Use contents of a file as keywords for search to display images:
     ~~~~
     cat files.log | xargs -I % find . -name foo*%*.jpg | xargs feh
