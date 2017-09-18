@@ -51,7 +51,7 @@ Here are the steps to rename the branch:
     ~~~~ 
     watch -d ls -l
     ~~~~ 
-- Selectively copy files from server:
+- Selectively copy files from server (warning: excludes subdirs due to `--exclude='*'`):
     ~~~~
     rsync -Rv -e ssh --include '*.json' --include '*.txt' --exclude='*' user@server:/path/to/data/ .
     ~~~~
