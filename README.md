@@ -51,6 +51,12 @@ Here are the steps to rename the branch:
     ~~~~ 
     watch -d ls -l
     ~~~~ 
+- Selectively copy files from server:
+    ~~~~
+    rsync -Rv -e ssh --include '*.json' --include '*.txt' --include --exclude='*' user@server:/path/to/data/ .
+    ~~~~
+
+
 - Resume a broken scp transfer:
     ~~~~
     rsync --rsh='ssh' -av --progress --partial  user@domain.com:/path/to/data/ .
