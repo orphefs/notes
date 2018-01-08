@@ -55,7 +55,9 @@ Here are the steps to rename the branch:
     ~~~~
     rsync -Rv -e ssh --include '*.json' --include '*.txt' --exclude='*' user@server:/path/to/data/ .
     ~~~~
-
+    ~~~~
+    rsync -rv -e ssh --include="*.one" --include="*.two" --include="*.three" --include="*/" --exclude="*" --progress             user@server:/path/to/data/*  /path/to/local/
+    ~~~~
 
 - Resume a broken scp transfer:
     ~~~~
