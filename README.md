@@ -51,6 +51,10 @@ Here are the steps to rename the branch:
     ~~~~ 
     watch -d ls -l
     ~~~~ 
+- Prepend # at beggining of file (in-place modification)
+    ~~~~
+    sed -i '0,/^[^#]/ s//#&/' file
+    ~~~~
 - Selectively copy files from server (warning: excludes subdirs due to `--exclude='*'`):
     ~~~~
     rsync -Rv -e ssh --include '*.json' --include '*.txt' --exclude='*' user@server:/path/to/data/ .
