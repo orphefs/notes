@@ -101,5 +101,11 @@ Here are the steps to rename the branch:
     git reset HEAD~
     `
 
- 
+ # Database tricks
+- Restoring a mongo db dump into a docker instance running mongo
+    ~~~~ 
+    sudo docker run -d -p 27017:27017 -v <local backup dir>:<docker dir> mongo
+
+    docker exec -it <CONTAINER ID> bash -c 'mongorestore <docker dir>'
+    ~~~~ 
 
