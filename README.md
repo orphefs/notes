@@ -108,4 +108,16 @@ Here are the steps to rename the branch:
 
     docker exec -it <CONTAINER ID> bash -c 'mongorestore <docker dir>'
     ~~~~ 
+    
+-Printing the first field on the second line
+    ~~~~
+    docker container ls  | awk 'FNR == 2 {print $1}'
+    ~~~~
+    
+- Saving the command output to variable, and output variable:
+    ~~~~
+    var1="$(docker container ls  | awk 'FNR == 2 {print $1}')"
+    echo "$var1"
+    ~~~
+    
 
