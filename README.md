@@ -14,7 +14,9 @@ Here are the steps to rename the branch:
     git push origin --delete <branch_name>
     git branch -d <branch_name>
     
+#### Displaying files changed by a user since date:
 
+    git log --since="2018-01-31" --author="Mr. Squibbles" --stat --name-only --oneline
 
 
 # Python tricks
