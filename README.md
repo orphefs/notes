@@ -41,6 +41,12 @@ Here are the steps to rename the branch:
 
 
 # Bash tricks
+- Matching a .json file for a key, then selecting the value (in this case it is a directory) and removing the quotes, and using it with xargs to copy that directory into a `output` directory:
+    ~~~~
+    cat folders.json | grep my_key | awk '{print $2}' | tr -d '",' | xargs -t -I % bash -c 'cp -r % output/'
+    ~~~~
+
+
 - Using the output of a command as input to another one
     ~~~~ 
     cat `ls | grep .confusionmatrix`
