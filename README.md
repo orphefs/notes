@@ -20,6 +20,12 @@ Here are the steps to rename the branch:
 
 
 # Python tricks
+
+- Running a python script in sudo while preserving environment variables
+    ~~~~ 
+    sudo -HE env PATH=$PATH PYTHONPATH=$PYTHONPATH python setup.py install
+    ~~~~ 
+
 - Using memory profiler to profile python code
     ~~~~ 
     pip install memory-profiler
