@@ -42,7 +42,14 @@ Here are the steps to rename the branch:
     ~~~~
     
 
-    
+# Networking tricks
+- Bringing a network interface down to change its configuration:
+    ~~~~
+    sudo ifconfig enp12s0 down
+    sudo ifconfig enp12s0 10.10.1.2 netmask 255.255.255.0 up
+    ~~~~
+
+   
 
 
 
@@ -133,5 +140,5 @@ Here are the steps to rename the branch:
     var1="$(docker container ls  | awk 'FNR == 2 {print $1}')"
     echo "$var1"
     ~~~~
-    
+   
 
