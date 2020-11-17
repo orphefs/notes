@@ -48,8 +48,13 @@ Here are the steps to rename the branch:
     sudo ifconfig enp12s0 down
     sudo ifconfig enp12s0 10.10.1.2 netmask 255.255.255.0 up
     ~~~~
+$ Linux administration tricks
 
-   
+- Forcing package installation if `sudo apt-get install -f` fails:
+    ~~~~
+    sudo dpkg -i --force-overwrite path-to-the-deb-file
+    ~~~~
+  
 
 
 
