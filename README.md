@@ -146,4 +146,13 @@ $ Linux administration tricks
     echo "$var1"
     ~~~~
    
+# Linux admin tricks
+- When mounting a new filesystem usig fstab, these are recommended options for normal users:    
+    `auto,uid=1000,dmask=027,fmask=137,umask=002`
+    `auto`: mounts on boot
+    `uid=1000`: a user with uid 1000 is the first normal user (non-root user) created on the system
+    `dmask`: permissions for directories
+    `fmask`: permissions for files
+    `umask`: permissions for all
+    
 
