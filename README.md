@@ -126,6 +126,17 @@ $ Linux administration tricks
     `
     git reset HEAD~
     `
+- Get unique file extensions in a directory and subdirs
+    `
+    find . -type f | perl -ne 'print $1 if m/\.([^.\/]+)$/' | sort -u
+    `
+- Search for these extensions and print filesizes
+    `
+    find . -type f \( -name ".m4a" -o -name "*.mp4" -o -name "*.mkv" -o -name "*.webm" -o -name "*.dashVideo" \) -exec du '{}' \;
+    `
+    Alternatively, use `-exec cp '{}' /path/to/dir/` in order to copy files recursively.
+    
+
 
  # Database tricks
 - Restoring a mongo db dump into a docker instance running mongo
