@@ -111,7 +111,7 @@ RUN mv /.actrc ~/.actrc
 
 WORKDIR /project
 
-CMD /bin/sh -c "act -n ${ACTION} --secret-file=${PATH_TO_SECRET} > /logs/dry-run.log; act ${ACTION} > /logs/run.log"
+CMD /bin/sh -c "act -n ${ACTION} > /logs/dry-run.log; act ${ACTION} --secret-file=${PATH_TO_SECRET} > /logs/run.log"
 ```
 
 Rebuild it:
