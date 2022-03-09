@@ -48,7 +48,7 @@ The `.actrc` config file should be in your `Dockerfile` directory.
 
 ```bash
 cat << EOF > .actrc
--P ubuntu-latest=node:12.20.1-buster-slim
+-P ubuntu-latest=nektos/act-environments-ubuntu:18.04
 EOF
 ```
 This specifies which ubuntu image the Dockerfile should use. For more info on available docker images for `act` have a look [here](https://github.com/nektos/act/blob/master/IMAGES.md).
