@@ -51,7 +51,7 @@ cat << EOF > .actrc
 -P ubuntu-latest=node:12.20.1-buster-slim
 EOF
 ```
-This specifies which ubuntu image the Dockerfile should use.
+This specifies which ubuntu image the Dockerfile should use. For more info on available docker images for `act` have a look [here](https://github.com/nektos/act/blob/master/IMAGES.md).
 
 ### Building time!
 
