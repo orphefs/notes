@@ -1,39 +1,53 @@
-# Configuring `act` to run a github test workflow locally, using an Azure secret key
+# Tutorial: How to improve development speed by running Github workflows on your local machine
+
+## Introduction
+
+Do you rely on test workflows for upholding a high level of code quality? Have you ever been frustrated at the fact that every time you want to make changes to your github workflow `.yml` you have to commit changes which may lead to failed builds, again and again? have you ever been frustrated that this leads to "commit pollution"? I have. And this is why I decided to use [act](https://github.com/nektos/act), which is a superb tool that spawns a docker instance to run the workflow locally. It is user friendly, but still requires some configuration to get it up and running, especially if you want fancy things like authenticating and connecting to external services.
 
 ## Objective
 
-The objective of this short tutorial is to run a Github test workflow on our local machine to speed up development iterations. This is of particular importance when you don't want to pollute Git history by committing a lot of code whose purpose is to get the test workflow to pass. In our case, this is especially important, as our tests are data-intensive and incur large bandwidth overhead on our Azure instance, which translates to higher cost.
+ The objective of this short tutorial is to run a Github test workflow on our local machine to speed up development iterations. This is of particular importance when you don't want to pollute Git history by committing a lot of code whose purpose is to get the test workflow to pass. In our case, this is especially important, as our tests are data-intensive and incur large bandwidth overhead on our Azure instance, which translates to higher cost.
 
-We are going to use [act](https://github.com/nektos/act), which is a tool that spawns a docker instance to run the workflow locally. For this to work we will need to do the following:
+We are going to use [act](https://github.com/nektos/act), which is a tool that spawns a docker instance to run the workflow locally.
 
-- Install [Docker Engine](https://docs.docker.com/engine/install/). Please make sure that the Docker daemon is running and functional prior to proceeding with this tutorial.
-- Create an `.actrc` config file, which tells `act` which linux image to use.
-- Create a `Dockerfile` and build it.
-- Run the docker image, passing some environment variables needed for the workflow to execute.
+>NOTE: If you find this tool useful, please consider supporting the developer [here](https://github.com/sponsors/cplee).
 
-Let's start!
+For this to work we will need to do the following:
 
-## Building the docker image
+1. Install [Docker Engine](https://docs.docker.com/engine/install/). Please make sure that the Docker daemon is running and functional prior to proceeding with this tutorial.
+2. Create an `.actrc` config file, which tells `act` which base image to use. We can use a pre-built base image, or we can build our own base image.
+3. Create a `Dockerfile` and build it.
+4. Run the docker image, passing some environment variables needed for the workflow to execute.
+5. (Optional) Create a `act.vault` file, which stores our authentication credentials for connecting to our external service.
 
-### Dockerfile
+Let's start! 🚀
 
-Let us create a *Docker-in-Docker*  `Dockerfile`:
+## Starting out
 
-Contents of `Dockerfile`:
+At this point your local directory structure should look something like this:
 
-```Dockerfile
-FROM docker:dind
-
-RUN apk add curl
-RUN curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sh
-
-COPY .actrc /
-RUN mv /.actrc ~/.actrc
-
-WORKDIR /project
-
-CMD /bin/sh -c "act -n ${ACTION} > /logs/dry-run.log; act ${ACTION} > /logs/run.log"
+```bash
+$ tree -a
+.
+├── my-repo
+    ├── .git
+    ├── .github
+    │   └── workflows
+    │       └── tests.yml
+    └── src
 ```
+
+## Instantiating the `.actrc` config file
+
+The `.actrc` config file should be in your top-level directory.
+
+Contents of `.actrc`:
+
+```bash
+-P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-20.04
+```
+
+This specifies which ubuntu image the Dockerfile should use. For more info on available docker images for `act` have a look [here](https://github.com/nektos/act/blob/master/IMAGES.md).
 
 A typical workflow `.yml` file (i.e. `tests.yml`) may look like this:
 
@@ -68,27 +82,68 @@ jobs:
           python -m pytest
 ```
 
+> NOTE: In our case we are using [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/) to store the data and [DVC](https://dvc.org/) to version it.
+
 The line
 
 ```yaml
 on: ${ACTION}
 ```
 
-The `$ACTION` variable will be passed to the container during runtime, and it is used to specify upon which action (`push`, `pull_request`) the workflow should run.
+specifies upon which action (`push`, `pull_request`) the workflow should run. The `$ACTION` variable will be passed to the container during runtime.
 
-### `.actrc`
-
-The `.actrc` config file should be in your `Dockerfile` directory.
-
-Contents of `.actrc`:
+At this point your local directory structure should look something like this:
 
 ```bash
--P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-20.04
+$ tree -a
+.
+├── my-repo
+    ├── .git
+    ├── .github
+    │   └── workflows
+    │       └── tests.yml
+    └── src
+ .actrc
 ```
 
-This specifies which ubuntu image the Dockerfile should use. For more info on available docker images for `act` have a look [here](https://github.com/nektos/act/blob/master/IMAGES.md).
+## Docker-in-Docker build
 
-### Building time
+### Prerequisites
+
+Let us create a *Docker-in-Docker*  `Dockerfile`:
+
+Contents of `Dockerfile`:
+
+```Dockerfile
+FROM docker:dind
+
+RUN apk add curl
+RUN curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sh
+
+COPY .actrc /
+RUN mv /.actrc ~/.actrc
+
+WORKDIR /project
+
+CMD /bin/sh -c "act -n ${ACTION} > /logs/dry-run.log; act ${ACTION} > /logs/run.log"
+```
+
+At this point your local directory structure should look something like this:
+
+```bash
+$ tree -a
+.
+├── .actrc
+├── Dockerfile
+├── my-repo
+    ├── .git
+    ├── .github
+    │   └── workflows
+    │       └── tests.yml
+    └── src
+```
+
+### Build time
 
 Let's build the Dockerfile via
 
@@ -98,7 +153,7 @@ docker build -t github-actions-pipeline .
 
 >NOTE: If you haven't enabled rootless mode, you may have to use `sudo`.
 
-Now you can run `docker images` and see the newly built image.
+Now you can run `docker images` (or `sudo docker images`) and see the newly built image.
 
 ## Running the docker container
 
@@ -108,21 +163,41 @@ Now we can run our image and look at the logs.
 sudo docker run \ 
     -d --rm \ # delete container when finished
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v $(pwd):/project \ # mount repo as volume inside container
+    -v $(pwd)/my-repo:/project \ # mount repo as volume inside container
     -v $(pwd)/ci-logs:/logs \ # logs directory
     -e ACTION=pull_request \ # our action (could be push, or something else) 
     github-actions-pipeline # our image
 ```
 
-Hopefully, this should now run your workflow. To observe the logs, run
+Hopefully, this should now run your workflow, if you *don't require any kind of authentication to access your external service*.
+
+At this point your local directory structure should look something like this:
+
+```bash
+├── .actrc
+├── ci-logs
+│   ├── dry-run.log
+│   └── run.log
+├── Dockerfile
+├── my-repo
+    ├── .git
+    ├── .github
+    │   └── workflows
+    │       └── tests.yml
+    └── src
+```
+
+To observe the logs, run
 
 ```bash
 tail -f ci-logs/run.log
 ```
 
-## Next steps: passing secret credentials for connecting to external services
+## Next step: passing auth credentials for connecting to external services
 
-Sometimes we are connecting to external services (i.e. [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/))in order to fetch some data. To understand how to set up an Azure AD application and service principal, have a look at [this](https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal) tutorial. In our case, we have registered our Github workflow as an app on Azure, and have obtained an Azure secret credential which is passed to the workflow using a Github environment variable. It happens to be called `secrets.AZURE_CREDENTIALS`. On Github, this can be set via repository settings menu, available to the administrator.
+Sometimes we are connecting to external services (i.e. [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/))in order to fetch some data or do other things. To understand how to set up an Azure AD application and service principal, have a look at [this](https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal) tutorial. In our case, we have registered our Github workflow as an app on Azure, and have obtained an Azure secret credential which is passed to the workflow using a Github environment variable. It happens to be called `secrets.AZURE_CREDENTIALS`. On Github, this can be set via repository settings menu, available to the administrator.
+
+### Creating the `act.vault` secret file
 
 Once you have set up your app on Azure and obtained your secret key, then you can also use this key locally. We can employ the `--secret-file $PATH_TO_SECRET` flag to tell act to look inside a file where we have stored our secret credential, i.e. `act.vault`. We have to be careful how we store our secret key inside this file, especially if it is a JSON file (check out [this](https://github.com/joho/godotenv) for more details).
 
@@ -134,71 +209,16 @@ AZURE_CREDENTIALS: { "clientId": "redacted", "clientSecret": "redacted",  "subsc
 
 (...make sure there are no newlines in your JSON!)
 
-Now, let's include the new argument inside `Dockerfile`:
-
-Contents of `Dockerfile`:
-
-```bash
-FROM docker:dind
-
-RUN apk add curl
-RUN curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sh
-
-COPY .actrc /
-RUN mv /.actrc ~/.actrc
-
-WORKDIR /project
-
-CMD /bin/sh -c "act -n ${ACTION} > /logs/dry-run.log; act ${ACTION} --secret-file=${PATH_TO_SECRET} > /logs/run.log"
-```
-
-As of the time of writing this, the [Ubuntu 20.04 image](https://github.com/catthehacker/docker_images/pkgs/container/ubuntu) kindly provided by [@catthehacker](https://github.com/catthehacker) does not come with the Azure CLI preinstalled, so we will have to use this image as a base and install `az` on top of it.
-
-Our new image `Dockerfile` will look like this:
-
-```Dockerfile
-FROM ghcr.io/catthehacker/ubuntu:act-20.04
-
-RUN curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-
-```
-
-Now, we have to build both the `act` image, and our `dind` image, in the following order:
-
-`act` image:
-
-```bash
-docker build -t ubuntu:act-20.04 .
-```
-
-We also have to change the contents of our `.actrc` to use the new `act` image in our `dind` container:
-
-Contents of `.actrc`:
-
-```bash
--P ubuntu-latest=ubuntu:act-20.04
-```
-
->NOTE: I have provided a prebuilt image in my [Docker hub repo](https://hub.docker.com/repository/docker/orphefs/orphefs). If you want to use that instead, you can replace the above with `-P ubuntu-latest=orphefs/orphefs:act-ubuntu-20.04` in your `.actrc`
-
-`dind` image:
-
-```bash
-docker build -t github-actions-pipeline .
-```
-
-We have to put our secret file `act.vault` inside a directory `secret/`
-
-```bash
-mkdir secret
-
-```
-
-Our directory structure should now look something like this:
+We have to put our secret file `act.vault` inside a directory `secret/`. Our directory structure should now look something like this:
 
 ```bash
 $ tree -a
 .
+├── .actrc
+├── ci-logs
+│   ├── dry-run.log
+│   └── run.log
+├── Dockerfile
 ├── my-repo
 │   ├── .git
 │   ├── .github
@@ -207,6 +227,66 @@ $ tree -a
 │   └── src
 └── secret
     └── act.vault
+
+```
+
+### Update the base image
+
+As of the time of writing this, the [Ubuntu 20.04 image](https://github.com/catthehacker/docker_images/pkgs/container/ubuntu) kindly provided by [@catthehacker](https://github.com/catthehacker) does not come with the Azure CLI preinstalled, so we will have to use this image as a base and install `az` on top of it. The `Dockerfile` for our *new base image* will look like this:
+
+```Dockerfile
+FROM ghcr.io/catthehacker/ubuntu:act-20.04
+
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | sudo >bash
+
+```
+
+We have to first build the `act` image:
+
+`act` image:
+
+```bash
+docker build -t ubuntu:act-20.04 .
+```
+
+### Updated `.actrc`
+
+Once we decide which `act` image to use (pre-built or our own), we also have to change the contents of our `.actrc` to use the new `act` image in our `dind` container:
+
+Contents of `.actrc`:
+
+```bash
+-P ubuntu-latest=ubuntu:act-20.04
+```
+
+I have provided a prebuilt image in my [Docker hub repo](https://hub.docker.com/repository/docker/orphefs/orphefs). If you want to use that instead, you can replace the above with `-P ubuntu-latest=orphefs/orphefs:act-ubuntu-20.04` in your `.actrc`.
+
+### Update Docker-in-Docker build
+
+Now, let's include the new argument inside `Dockerfile`:
+
+Contents of `Dockerfile`:
+
+```bash
+FROM docker:dind
+
+
+RUN apk add curl
+RUN curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sh
+
+COPY .actrc /
+RUN mv /.actrc ~/.actrc
+RUN mkdir /secret
+
+WORKDIR /project
+
+CMD /bin/sh -c "act -n ${ACTION} > /logs/dry-run.log; act ${ACTION} --secret-file=/secret/act.vault -v > /logs/run.log"
+```
+
+Now,let's build the `dind` image again:
+
+```bash
+docker build -t github-actions-pipeline .
 ```
 
 Now we can run the `dind` container using
@@ -221,25 +301,7 @@ sudo docker run -d --rm \ # delete container when finished
     github-actions-pipeline 
 ```
 
-Hopefully the above runs smoothly and creates a `ci-logs` dir in our folder structure
-
-```bash
-$ tree -a
-.
-├── ci-logs
-│   ├── dry-run.log
-│   └── run.log
-├── my-repo
-│   ├── .git
-│   ├── .github
-│   │   └── workflows
-│   │       └── tests.yml
-│   └── src
-└── secret
-    └── act.vault
-```
-
-As mentioned previously, we can view the output on stdout via
+Hopefully the above runs smoothly and updates the `ci-logs/run.log` file, so we can view the output on stdout via
 
 ```bash
 tail -f ci-logs/run.log
