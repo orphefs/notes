@@ -13,7 +13,6 @@ We are going to use [act](https://github.com/nektos/act), which is a tool that s
 
 Let's start!
 
-
 ## Building the docker image
 
 ### Dockerfile
@@ -21,7 +20,8 @@ Let's start!
 Let us create a *Docker-in-Docker*  `Dockerfile`:
 
 Contents of `Dockerfile`:
-```bash
+
+```Dockerfile
 FROM docker:dind
 
 RUN apk add curl
@@ -35,12 +35,13 @@ WORKDIR /project
 CMD /bin/sh -c "act -n ${ACTION} > /logs/dry-run.log; act ${ACTION} > /logs/run.log"
 ```
 
+Your workflow `.yml` file should contain a line
 
-Your workflow `.yml` file should contain a line 
 ```bash
 on: ${ACTION}
 ```
-The `$ACTION` variable will be passed to the container during runtime, and it is used to specify upon which action (`push`, `pull_request`) the workflow should run. 
+
+The `$ACTION` variable will be passed to the container during runtime, and it is used to specify upon which action (`push`, `pull_request`) the workflow should run.
 
 ### `.actrc`
 
@@ -51,9 +52,10 @@ cat << EOF > .actrc
 -P ubuntu-latest=nektos/act-environments-ubuntu:18.04
 EOF
 ```
+
 This specifies which ubuntu image the Dockerfile should use. For more info on available docker images for `act` have a look [here](https://github.com/nektos/act/blob/master/IMAGES.md).
 
-### Building time!
+### Building time
 
 Let's build the Dockerfile via
 
@@ -79,27 +81,30 @@ sudo docker run \
     github-actions-pipeline # our image
 ```
 
-Hopefully, this should now run your workflow. To observe the logs, run 
+Hopefully, this should now run your workflow. To observe the logs, run
 
 ```bash
 tail -f ci-logs/run.log
 ```
 
-## Extra: passing secret credentials
+## Extra: connecting to Azure passing secret credentials
 
-Sometimes we are connecting to external services in order to fetch some data. In our case, we have an Azure secret credential which is passed to the workflow using a Github environment variable. It happens to be called `secrets.AZURE_CREDENTIALS`. On Github, this can be set via repository settings menu, available to the administrator.
+Sometimes we are connecting to external services (i.e. [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/))in order to fetch some data. To understand how to set up an Azure AD application and service principal, have a look at [this](https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal) tutorial. In our case, we have registered our Github workflow as an app on Azure, and have obtained an Azure secret credential which is passed to the workflow using a Github environment variable. It happens to be called `secrets.AZURE_CREDENTIALS`. On Github, this can be set via repository settings menu, available to the administrator.
 
-To use this key locally, we can employ the `--secret-file $PATH_TO_SECRET` flag to tell act to look inside a file where we have stored our secret credential, i.e. `act.vault`. We have to be careful how we store our secret key inside this file, especially if it is a JSON file (check out [this](https://github.com/joho/godotenv) for more details).
+Once you have set up your app on Azure and obtained your secret key, then you can also use this key locally. We can employ the `--secret-file $PATH_TO_SECRET` flag to tell act to look inside a file where we have stored our secret credential, i.e. `act.vault`. We have to be careful how we store our secret key inside this file, especially if it is a JSON file (check out [this](https://github.com/joho/godotenv) for more details).
 
 Contents of `act.vault`, which in this case is formatted in `yaml`:
+
 ```yaml
 AZURE_CREDENTIALS: { "clientId": "redacted", "clientSecret": "redacted",  "subscriptionId": "redacted",   "tenantId": "redacted",  "activeDirectoryEndpointUrl": "https://login.microsoftonline.com",  "resourceManagerEndpointUrl": "https://management.azure.com/", "activeDirectoryGraphResourceId": "https://graph.windows.net/",  "sqlManagementEndpointUrl": "https://management.core.windows.net:8443/",  "galleryEndpointUrl": "https://gallery.azure.com/",   "managementEndpointUrl": "https://management.core.windows.net/" }
 ```
+
 (...make sure there are no newlines in your JSON!)
 
 Now, let's include the new argument inside `Dockerfile`:
 
 Contents of `Dockerfile`:
+
 ```bash
 FROM docker:dind
 
@@ -114,13 +119,40 @@ WORKDIR /project
 CMD /bin/sh -c "act -n ${ACTION} > /logs/dry-run.log; act ${ACTION} --secret-file=${PATH_TO_SECRET} > /logs/run.log"
 ```
 
-Rebuild it:
+As of the time of writing this, the [Ubuntu 20.04 image](https://github.com/catthehacker/docker_images/pkgs/container/ubuntu) kindly provided by [@catthehacker](https://github.com/catthehacker) does not come with the Azure CLI preinstalled, so we will have to use this image as a base and install `az` on top of it.
+
+Our new image `Dockerfile` will look like this:
+
+```Dockerfile
+FROM ghcr.io/catthehacker/ubuntu:act-20.04
+
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+```
+
+Now, we have to build both the `act` image, and our `dind` image, in the following order:
+
+`act` image:
+
+```bash
+docker build -t ubuntu:act-20.04 .
+```
+
+We also have to change the contents of our `.actrc` to use the new `act` image in our `dind` container:
+
+Contents of `.actrc`:
+
+```bash
+-P ubuntu-latest=ubuntu:act-20.04
+```
+
+`dind` image:
+
 ```bash
 docker build -t github-actions-pipeline .
 ```
 
-Now we can run it using 
-
+Now we can run it using
 
 ```bash
 sudo docker run \ 
@@ -133,7 +165,7 @@ sudo docker run \
     github-actions-pipeline # our image
 ```
 
-As mentioned previously, we can view the output on stdout via 
+As mentioned previously, we can view the output on stdout via
 
 ```bash
 tail -f ci-logs/run.log
