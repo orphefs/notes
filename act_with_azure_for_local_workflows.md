@@ -7,8 +7,8 @@ The objective of this short tutorial is to run a Github test workflow on our loc
 We are going to use [act](https://github.com/nektos/act), which is a tool that spawns a docker instance to run the workflow locally. For this to work we will need to do the following:
 
 - Install [Docker Engine](https://docs.docker.com/engine/install/). Please make sure that the Docker daemon is running and functional prior to proceeding with this tutorial.
-- Create a `Dockerfile` and build it.
 - Create an `.actrc` config file, which tells `act` which linux image to use.
+- Create a `Dockerfile` and build it.
 - Run the docker image, passing some environment variables needed for the workflow to execute.
 
 Let's start!
@@ -35,9 +35,42 @@ WORKDIR /project
 CMD /bin/sh -c "act -n ${ACTION} > /logs/dry-run.log; act ${ACTION} > /logs/run.log"
 ```
 
-Your workflow `.yml` file should contain a line
+A typical workflow `.yml` file (i.e. `tests.yml`) may look like this:
 
-```bash
+```yaml
+name: Github action to run tests
+on: pull_request
+jobs:
+  Run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - uses: iterative/setup-dvc@v1
+      - name: "Install some_dependency"
+        run: |
+          sudo apt-get install -y some_dependency
+      - name: "Install requirements"
+        run: pip install -r requirements.txt
+      - name: "Pull data"
+        run: |
+          dvc remote modify my_data_remote url azure://my_data_dir/
+          dvc remote modify my_data_remote account_name 'my_account_name'
+          dvc pull -f
+      - name: "Run tests"
+        run: |
+          export LD_PRELOAD=/lib/x86_64-linux-gnu/libstdc++.so.6:$LD_PRELOAD
+          python -m pytest
+```
+
+The line
+
+```yaml
 on: ${ACTION}
 ```
 
@@ -47,10 +80,10 @@ The `$ACTION` variable will be passed to the container during runtime, and it is
 
 The `.actrc` config file should be in your `Dockerfile` directory.
 
+Contents of `.actrc`:
+
 ```bash
-cat << EOF > .actrc
--P ubuntu-latest=nektos/act-environments-ubuntu:18.04
-EOF
+-P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-20.04
 ```
 
 This specifies which ubuntu image the Dockerfile should use. For more info on available docker images for `act` have a look [here](https://github.com/nektos/act/blob/master/IMAGES.md).
@@ -87,7 +120,7 @@ Hopefully, this should now run your workflow. To observe the logs, run
 tail -f ci-logs/run.log
 ```
 
-## Extra: connecting to Azure passing secret credentials
+## Next steps: passing secret credentials for connecting to external services
 
 Sometimes we are connecting to external services (i.e. [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/))in order to fetch some data. To understand how to set up an Azure AD application and service principal, have a look at [this](https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal) tutorial. In our case, we have registered our Github workflow as an app on Azure, and have obtained an Azure secret credential which is passed to the workflow using a Github environment variable. It happens to be called `secrets.AZURE_CREDENTIALS`. On Github, this can be set via repository settings menu, available to the administrator.
 
@@ -146,29 +179,90 @@ Contents of `.actrc`:
 -P ubuntu-latest=ubuntu:act-20.04
 ```
 
+>NOTE: I have provided a prebuilt image in my [Docker hub repo](https://hub.docker.com/repository/docker/orphefs/orphefs). If you want to use that instead, you can replace the above with `-P ubuntu-latest=orphefs/orphefs:act-ubuntu-20.04` in your `.actrc`
+
 `dind` image:
 
 ```bash
 docker build -t github-actions-pipeline .
 ```
 
-Now we can run it using
+We have to put our secret file `act.vault` inside a directory `secret/`
 
 ```bash
-sudo docker run \ 
-    -d --rm \ # delete container when finished
+mkdir secret
+
+```
+
+Our directory structure should now look something like this:
+
+```bash
+$ tree -a
+.
+├── my-repo
+│   ├── .git
+│   ├── .github
+│   │   └── workflows
+│   │       └── tests.yml
+│   └── src
+└── secret
+    └── act.vault
+```
+
+Now we can run the `dind` container using
+
+```bash
+sudo docker run -d --rm \ # delete container when finished
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v $(pwd):/project \ # mount repo as volume inside container
+    -v $(pwd)/my-repo:/project \ # mount my-repo into /project inside container
     -v $(pwd)/ci-logs:/logs \ # logs directory
+    -v $(pwd)/secret:/secret \ # mount secret/ directory into /secret directory inside container
     -e ACTION=pull_request \ # our action (could be push, or something else) 
-    -e PATH_TO_SECRET=$(pwd)/act.vault
-    github-actions-pipeline # our image
+    github-actions-pipeline 
+```
+
+Hopefully the above runs smoothly and creates a `ci-logs` dir in our folder structure
+
+```bash
+$ tree -a
+.
+├── ci-logs
+│   ├── dry-run.log
+│   └── run.log
+├── my-repo
+│   ├── .git
+│   ├── .github
+│   │   └── workflows
+│   │       └── tests.yml
+│   └── src
+└── secret
+    └── act.vault
 ```
 
 As mentioned previously, we can view the output on stdout via
 
 ```bash
 tail -f ci-logs/run.log
+```
+
+which should look something like this:
+
+```bash
+[Github action to run tests/Run-tests]   🐳  docker volume rm act-Github-action-to-run-tests-Run-tests
+tail: ci-logs/run.log: file truncated
+[Github action to run tests/Run-tests] 🚀  Start image=ubuntu:act-20.04
+[Github action to run tests/Run-tests]   🐳  docker pull image=ubuntu:act-20.04 platform= username= forcePull=false
+[Github action to run tests/Run-tests]   🐳  docker pull ubuntu:act-20.04
+[Github action to run tests/Run-tests]   🐳  docker create image=ubuntu:act-20.04 platform= entrypoint=["/usr/bin/tail" "-f" "/dev/null"] cmd=[]
+[Github action to run tests/Run-tests] Created container name=act-Github-action-to-run-tests-Run-tests id=570bea46dc1532498dbb04cdf972b67613407f44b25b0f128dd5970b06d504c9 from image ubuntu:act-20.04 (platform: )
+[Github action to run tests/Run-tests] ENV ==> [RUNNER_TOOL_CACHE=/opt/hostedtoolcache RUNNER_OS=Linux RUNNER_TEMP=/tmp]
+[Github action to run tests/Run-tests]   🐳  docker run image=ubuntu:act-20.04 platform= entrypoint=["/usr/bin/tail" "-f" "/dev/null"] cmd=[]
+.
+.
+.
+[Github action to run tests/Run-tests]   ✅  Success - Run tests
+[Github action to run tests/Run-tests] Removed container: 130da0ff0af6c87e2c9061a19af9a2f3e519c15a81ea27b56cf647efba6f26be
+[Github action to run tests/Run-tests]   🐳  docker volume rm act-Github-action-to-run-tests-Run-tests
 ```
 
 Happy workflowing :+1:
