@@ -168,8 +168,10 @@ $ Linux administration tricks
 - `iptables` configuration: How can I set up an iptables rule that blocks all incoming and outgoing traffic on all ports, except for localhost?
     ```bash
     sudo addgroup no-internet # add new user group
+    # the command below may not work on some kernels (see https://www.man7.org/linux/man-pages/man8/iptables-extensions.8.html -> "owner)
     sudo iptables -A INPUT -m owner --gid-owner no-internet -j DROP # block all incoming traffic on all ports
-    sudo iptables -A OUTPUT -m owner --gid-owner no-internet -j DROP # block all outgoing traffic on all ports
+    sudo iptables -A OUTPUT -m owner --gid-owner no-internet -j DROP # block all outgoing traffic on all ports 
+    # the command below may not work on some kernels (see https://www.man7.org/linux/man-pages/man8/iptables-extensions.8.html -> "owner)
     sudo iptables -I INPUT -m owner --gid-owner no-internet -i lo -j ACCEPT # allow incoming traffic on localhost
     sudo iptables -I OUTPUT -m owner --gid-owner no-internet -o lo -j ACCEPT # allow outgoing traffic on localhost
     ```
