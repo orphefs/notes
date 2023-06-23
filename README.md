@@ -165,5 +165,29 @@ $ Linux administration tricks
     `dmask`: permissions for directories
     `fmask`: permissions for files
     `umask`: permissions for all
+- `iptables` configuration: How can I set up an iptables rule that blocks all incoming and outgoing traffic on all ports, except for localhost?
+    ```bash
+    sudo addgroup no-internet # add new user group
+    sudo iptables -A INPUT -m owner --gid-owner no-internet -j DROP # block all incoming traffic on all ports
+    sudo iptables -A OUTPUT -m owner --gid-owner no-internet -j DROP # block all outgoing traffic on all ports
+    sudo iptables -I INPUT -m owner --gid-owner no-internet -i lo -j ACCEPT # allow incoming traffic on localhost
+    sudo iptables -I OUTPUT -m owner --gid-owner no-internet -o lo -j ACCEPT # allow outgoing traffic on localhost
+    ```
+
+    Then test via something like `sudo -g no-internet curl -XGET 127.0.0.1:8888`
     
+    >Note: The `-I` option inserts the rule at the beginning of the chain, so it takes precedence over the -A option that appends the rule at the end of the chain. This way, the localhost traffic is allowed before the general blocking rules are applied.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
