@@ -2,6 +2,20 @@
 Some useful scripting / linux  / coding tricks I've collected along the way
 
 # Git tricks
+
+#### Hard overwrite a branch with another branch
+
+```
+//the branch you want to overwrite
+git checkout branch-to-overwrite 
+
+//reset to the new branch
+git reset --hard origin/new-branch
+
+// push to remote
+git push -f
+```
+
 #### Reverting to specific commit in history
 
 `git checkout -f A -- . # checkout that revision over the top of local files`
