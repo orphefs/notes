@@ -2,6 +2,10 @@
 Some useful scripting / linux  / coding tricks I've collected along the way
 
 # Git tricks
+#### Reverting to specific commit in history
+
+`git checkout -f A -- . # checkout that revision over the top of local files`
+
 #### Renaming a git branch
 Here are the steps to rename the branch:
 
